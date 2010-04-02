@@ -1,7 +1,7 @@
 require File.join(File.dirname(__FILE__),'smart_ps.rb')
 module ActiveMerchant #:nodoc:
   module Billing #:nodoc:
-    class BraintreeGateway < SmartPs
+    class BraintreeGateway < SmartPsGateway
       def api_url 
         'https://secure.braintreepaymentgateway.com/api/transact.php'
       end

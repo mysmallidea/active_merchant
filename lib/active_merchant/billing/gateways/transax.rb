@@ -2,7 +2,7 @@ require File.join(File.dirname(__FILE__),'smart_ps.rb')
 
 module ActiveMerchant #:nodoc:
   module Billing #:nodoc:
-    class TransaxGateway < SmartPs
+    class TransaxGateway < SmartPsGateway
       def api_url 
         'https://secure.nelixtransax.net/api/transact.php'
       end
