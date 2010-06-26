@@ -55,24 +55,22 @@ module ActiveMerchant #:nodoc:
         commit('void', nil, post)
       end
       
-      def credit(money, payment_source, options = {})
+      def credit(money, identification, options = {})
         post = {}
-        add_invoice(post, options)
-        add_payment_source(post, payment_source, options)        
-        add_address(post, options[:billing_address] || options[:address])
-        add_customer_data(post, options)
-        add_sku(post,options)
-        add_currency(post, money, options)
-        add_processor(post, options)
-        commit('credit', money, post)
+        if !options[:general]
+          add_transaction(post, identification)
+          commit('refund', money, post)
+        else
+          add_invoice(post, options)
+          add_payment_source(post, identification, options)        
+          add_address(post, options[:billing_address] || options[:address])
+          add_customer_data(post, options)
+          add_sku(post,options)
+          add_currency(post, money, options)
+          add_processor(post, options)
+          commit('credit', money, post)
+        end
       end
-      
-      def refund(auth, options = {})
-        post = {}
-        add_transaction(post, auth)
-        commit('refund', options.delete(:amount), post)
-      end
-      
       
       # Update the values (such as CC expiration) stored at
       # the gateway.  The CC number must be supplied in the
