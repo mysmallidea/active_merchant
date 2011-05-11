@@ -1,6 +1,7 @@
 require 'time'
 require 'date'
 require 'active_merchant/billing/expiry_date'
+require 'active_model'
 
 module ActiveMerchant #:nodoc:
   module Billing #:nodoc:
@@ -36,13 +37,16 @@ module ActiveMerchant #:nodoc:
     #
     class CreditCard
       include CreditCardMethods
-      include Validateable
-
+      include ActiveModel::Validations
+      include ActiveModel::MassAssignmentSecurity
+      include MassAssignment
+      
       ## Attributes
 
       cattr_accessor :require_verification_value
       self.require_verification_value = true
-
+      attr_protected :requires_verification_value
+      
       # Essential attributes for a valid, non-bogus creditcards
       attr_accessor :number, :month, :year, :type, :first_name, :last_name
 
@@ -52,6 +56,8 @@ module ActiveMerchant #:nodoc:
       # Optional verification_value (CVV, CVV2 etc). Gateways will try their best to
       # run validation on the passed in value if it is supplied
       attr_accessor :verification_value
+      
+      validate :validate
 
       alias_method :brand, :type
       
@@ -94,6 +100,7 @@ module ActiveMerchant #:nodoc:
       end
 
       def validate
+        cleanup_attributes
         validate_essential_attributes
 
         # Bogus card is pretty much for testing purposes. Lets just skip these extra tests if its used
@@ -110,8 +117,8 @@ module ActiveMerchant #:nodoc:
       end
 
       private
-
-      def before_validate #:nodoc:
+      
+      def cleanup_attributes #:nodoc: 
         self.month = month.to_i
         self.year  = year.to_i
         self.start_month = start_month.to_i unless start_month.nil?
