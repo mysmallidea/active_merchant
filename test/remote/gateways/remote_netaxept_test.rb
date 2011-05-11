@@ -26,19 +26,18 @@ class RemoteNetaxeptTest < Test::Unit::TestCase
   end
 
   def test_authorize_and_capture
-    amount = @amount
-    assert auth = @gateway.authorize(amount, @credit_card, @options)
+    assert auth = @gateway.authorize(@amount, @credit_card, @options)
     assert_success auth
     assert_equal 'OK', auth.message
     assert auth.authorization
-    assert capture = @gateway.capture(amount, auth.authorization)
+    assert capture = @gateway.capture(@amount, auth.authorization)
     assert_success capture
   end
 
   def test_failed_capture
     assert response = @gateway.capture(@amount, '')
     assert_failure response
-    assert_equal %(Missing parameter: 'Transaction ID'), response.message
+    assert_equal "Unable to find transaction", response.message
   end
   
   def test_successful_credit
@@ -104,12 +103,12 @@ class RemoteNetaxeptTest < Test::Unit::TestCase
     assert_equal "137:7", response.error_detail
   end
   
-  def test_error_in_transaction
+  def test_amount_is_not_required_again_when_capturing_authorization
     assert response = @gateway.authorize(@amount, @credit_card, @options)
     assert_success response
     
     assert response = @gateway.capture(nil, response.authorization)
-    assert_equal "Missing parameter: 'Transaction Amount'", response.message
+    assert_equal "OK", response.message
   end
 
   def test_invalid_login

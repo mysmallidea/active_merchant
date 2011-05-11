@@ -47,7 +47,7 @@ module ActiveMerchant #:nodoc:
       def purchase(money, payment_source, options = {})
         setup_address_hash(options)
         
-        if payment_source.is_a?(CreditCard)
+        if payment_source.respond_to?(:number)
           commit(build_purchase_request('SALE', money, payment_source, options), options)
         else
           commit(build_reference_request('SALE', money, payment_source, options), options)
@@ -59,6 +59,11 @@ module ActiveMerchant #:nodoc:
       end
       
       def credit(money, authorization, options={})
+        deprecated CREDIT_DEPRECATION_MESSAGE
+        refund(money, authorization, options)
+      end
+
+      def refund(money, authorization, options={})
         commit(build_reference_request('REFUND', money, authorization, options), options)
       end
       
@@ -131,19 +136,23 @@ module ActiveMerchant #:nodoc:
       end
 
       def add_customerdetails(xml, creditcard, address, options, shipTo = false)
-        country_code = CountryCodes.find_by_a2[address[:country]][:numeric] rescue 724 # rescue'd to Spain
         xml.tag! 'CustomerDetails' do
-          xml.tag! 'BillingAddress' do
-            xml.tag! 'Address1', address[:address1]
-            xml.tag! 'Address2', address[:address2]
-            xml.tag! 'City', address[:city]
-            xml.tag! 'State', address[:state]
-            xml.tag! 'PostCode', address[:zip]
-            xml.tag! 'CountryCode', country_code
+          if address
+            unless address[:country].blank?
+              country_code = Country.find(address[:country]).code(:numeric)
+            end
+            xml.tag! 'BillingAddress' do
+              xml.tag! 'Address1', address[:address1]
+              xml.tag! 'Address2', address[:address2]
+              xml.tag! 'City', address[:city]
+              xml.tag! 'State', address[:state]
+              xml.tag! 'PostCode', address[:zip]
+              xml.tag! 'CountryCode', country_code if country_code
+            end
+            xml.tag! 'PhoneNumber', address[:phone]
           end
           
           xml.tag! 'EmailAddress', options[:email]
-          xml.tag! 'PhoneNumber', address[:phone]
           xml.tag! 'CustomerIPAddress', options[:ip] || "127.0.0.1"
         end   
       end
@@ -151,9 +160,9 @@ module ActiveMerchant #:nodoc:
       def add_creditcard(xml, creditcard)      
         xml.tag! 'CardDetails' do
           xml.tag! 'CardName', creditcard.name
-          xml.tag! 'CV2', creditcard.verification_value
+          xml.tag! 'CV2', creditcard.verification_value if creditcard.verification_value
           xml.tag! 'CardNumber', creditcard.number
-          xml.tag! 'ExpiryDate', { 'Month' => creditcard.expiry_date.month.to_s.rjust(2, "0"), 'Year' => creditcard.expiry_date.year.to_s[/\d\d$/] }
+          xml.tag! 'ExpiryDate', { 'Month' => creditcard.month.to_s.rjust(2, "0"), 'Year' => creditcard.year.to_s[/\d\d$/] }
         end
       end
       
