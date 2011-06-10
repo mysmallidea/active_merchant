@@ -26,7 +26,7 @@ module ActiveMerchant #:nodoc:
     class AuthorizeNetGateway < Gateway
       API_VERSION = '3.1'
 
-      class_inheritable_accessor :test_url, :live_url, :arb_test_url, :arb_live_url
+      class_attribute :test_url, :live_url, :arb_test_url, :arb_live_url
 
       self.test_url = "https://test.authorize.net/gateway/transact.dll"
       self.live_url = "https://secure.authorize.net/gateway/transact.dll"
@@ -34,7 +34,7 @@ module ActiveMerchant #:nodoc:
       self.arb_test_url = 'https://apitest.authorize.net/xml/v1/request.api'
       self.arb_live_url = 'https://api.authorize.net/xml/v1/request.api'
       
-      class_inheritable_accessor :duplicate_window
+      class_attribute :duplicate_window
 
       APPROVED, DECLINED, ERROR, FRAUD_REVIEW = 1, 2, 3, 4
 
@@ -131,6 +131,7 @@ module ActiveMerchant #:nodoc:
       # * <tt>authorization</tt> - The authorization returned from the previous authorize request.
       def void(authorization, options = {})
         post = {:trans_id => authorization}
+        add_duplicate_window(post)
         commit('VOID', nil, post)
       end
 
@@ -155,6 +156,7 @@ module ActiveMerchant #:nodoc:
                  :card_num => options[:card_number]
                }
         add_invoice(post, options)
+        add_duplicate_window(post)
 
         commit('CREDIT', money, post)
       end
